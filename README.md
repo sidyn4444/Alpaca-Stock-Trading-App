@@ -61,7 +61,7 @@ pip install Jinja2==3.1.2
 
 # 6. Install tulipy with specific version (this one works)
 pip install tulipy==0.4.0
-'''
+```
 
 ### Step 3: Configure Your API Keys
 ```bash
@@ -76,7 +76,7 @@ code config.py
 # - API_KEY = 'YOUR_ACTUAL_API_KEY_HERE' (starts with PK...)
 # - SECRET_KEY = 'YOUR_ACTUAL_SECRET_KEY_HERE'
 # - Keep API_URL as 'https://paper-api.alpaca.markets'
-'''
+```
 
 ### Step 4: Database Setup (Run IN ORDER)
 ```bash
@@ -94,7 +94,7 @@ uvicorn main:app --reload
 
 # Open your browser and go to: http://localhost:8000
 # You should see the stock trading dashboard!
-'''
+```
 
 ### Step 5: Set Up Daily Automation (Cronjobs) - This is optional if you want updated stocks/prices everyday otherwise just running create_db, populate_stocks, populate_prices will have data up to date
 
@@ -120,4 +120,5 @@ crontab -e
 
 # 4. Verify your cronjobs are set:
 crontab -l
+```
 
