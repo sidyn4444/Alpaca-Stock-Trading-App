@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -205,3 +206,56 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+=======
+# Virtual Environment - CRITICAL!
+venv/
+.venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyo
+*.pyd
+*.python-version
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+config.py
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Logs
+*.log
+*.log.*
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Temp files
+*.tmp
+*.temp
+>>>>>>> 71fba5e (Initial commit: Trading dashboard with FastAPI)

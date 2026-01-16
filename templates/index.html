@@ -1,0 +1,95 @@
+<html>
+    <head>
+        <title>stocks</title>
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css"
+        >
+        <script
+            src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"
+        ></script>
+    </head>
+
+    <body>
+        <div class = "ui container">
+            <h1> Stock List</h1>
+            <!-- Filter form for stocks -->
+            <form method="get">
+                 <!-- Sends out request to index function and option chosen is stored under 'filter' -->
+                <select name="filter">
+                    <option value="">All Stocks</option>
+                    <!-- The option parameter ensures the dropdown is correct with the current option -->
+                    <option {% if request.query_params.filter == 'new_closing_highs' %} selected ='selected' {% endif %}
+                    value="new_closing_highs">New Closing Highs</option>
+                    <option {% if request.query_params.filter == 'new_closing_lows' %} selected ='selected' {% endif %}
+                    value="new_closing_lows">New Closing Lows</option>
+                </select>
+                <input type="submit" />
+            </form>
+            
+            <table class="ui striped table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>RSI 14</th>
+                        <th>SMA 20</th>
+                        <th>SMA 50</th>
+                    </tr>
+                </thead>
+    
+                <tbody>
+                    {% for stock in stocks %}
+                    <tr>
+                        <td>{{ stock.symbol }}</td>
+                        <!-- Now display stock.name but put a link to it -->
+                        <td><a href="/stock/{{ stock.symbol }}">{{ stock.name }}</a></td>
+                        <!-- The situation where the symbol is not in indicator values is if the symbol has no data for today's date (Cronjob hasn't updated yet) -->
+                        {% if stock.symbol in indicator_values %}
+
+<td>
+    {% if indicator_values[stock.symbol].close is not none %}
+        {{ indicator_values[stock.symbol].close | round(2) }}
+    {% else %}
+        N/A
+    {% endif %}
+</td>
+
+<td>
+    {% if indicator_values[stock.symbol].rsi_14 is not none %}
+        {{ indicator_values[stock.symbol].rsi_14 | round(2) }}
+    {% else %}
+        N/A
+    {% endif %}
+</td>
+
+<td>
+    {% if indicator_values[stock.symbol].sma_20 is not none %}
+        {{ indicator_values[stock.symbol].sma_20 | round(2) }}
+    {% else %}
+        N/A
+    {% endif %}
+</td>
+
+<td>
+    {% if indicator_values[stock.symbol].sma_50 is not none %}
+        {{ indicator_values[stock.symbol].sma_50 | round(2) }}
+    {% else %}
+        N/A
+    {% endif %}
+</td>
+{% else %}
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+{% endif %}
+
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

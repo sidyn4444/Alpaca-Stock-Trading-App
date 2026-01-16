@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+    <h1><a href="/">Stocks</a> 
+        <i class="angle double right icon"></i>
+        {{ stock.name }}
+        ({{ stock.symbol }})
+    </h1>
+
+    <!-- TradingView Widget BEGIN -->
+<div class="tradingview-widget-container" style="height:100%;width:100%">
+    <div
+        class="tradingview-widget-container__widget"
+        style="height:calc(100% - 32px);width:100%">
+    </div>
+
+    <script
+        type="text/javascript"
+        src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
+        async
+    >
+    {
+        "allow_symbol_change": true,
+        "calendar": false,
+        "details": false,
+        "hide_side_toolbar": true,
+        "hide_top_toolbar": false,
+        "hide_legend": false,
+        "hide_volume": false,
+        "hotlist": false,
+        "interval": "D",
+        "locale": "en",
+        "save_image": true,
+        "style": "1",
+        "symbol": "{{ stock.exchange }}:{{ stock.symbol }}",
+        "theme": "dark",
+        "timezone": "America/New_York",
+        "backgroundColor": "#0F0F0F",
+        "gridColor": "rgba(242, 242, 242, 0.06)",
+        "watchlist": [],
+        "withdateranges": false,
+        "compareSymbols": [],
+        "studies": [],
+        "autosize": true
+    }
+    </script>
+</div>
+<!-- TradingView Widget END -->
+    
+<!-- All of the data needed for stock_detail was sent in the python function -->
+    <!-- Will look for the function that has /apply_strategy and take the data sent out here and adjust databases accordingly -->
+   <form method ="post" action ="/apply_strategy">
+    <!-- This is a dropdown option visible to the user and the option chosen gets stored as strategy_id by id -->
+    <select name = "strategy_id">
+        {% for strategy in strategies %}
+        <!-- Option is stored as strategy.id but to the user it is displayed by name -->
+        <option value="{{ strategy.id }}">{{ strategy.name }}</option>
+   {% endfor %}
+    </select>
+
+    <!-- This is not visible to the user but is known by the program as stock_detail sent it here and is then sent out as well under stock_id -->
+    <input type="hidden" name="stock_id"value="{{ stock.id }}"/>
+    <!-- This is the button to trigger the action -->
+    <input type="submit" value="Apply Strategy"/>
+   </form>
+            <h2>Prices</h2>
+            <table class="ui striped table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Open</th>
+                        <th>High</th>
+                        <th>Low</th>
+                        <th>Close</th>
+                        <th>Volume</th>
+                    </tr>
+                </thead>
+    
+                <tbody>
+                    {% for bar in bars %}
+                    <tr>
+                        <td>{{bar.date}}</td>
+                        <td>{{bar.open}}</td>
+                        <td>{{bar.high}}</td>
+                        <td>{{bar.low}}</td>
+                        <td>{{bar.close}}</td>
+                        <td>{{bar.volume}}</td>
+                    </tr>
+    {% endfor %}
+                    </tbody>
+                </table>
+
+{% endblock %}
+
