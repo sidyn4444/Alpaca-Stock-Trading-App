@@ -1,6 +1,6 @@
 # 📈 Alpaca Trading Dashboard
 
-A complete stock trading platform with automated strategies, real-time charts, and daily updates using Alpaca Paper Trading API.
+A stock trading platform with automated strategies, real-time charts, and daily updates using Alpaca Paper Trading API. -> Still in progress
 
 ## ✨ Features
 
