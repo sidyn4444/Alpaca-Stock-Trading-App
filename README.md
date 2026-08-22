@@ -6,7 +6,7 @@ before the day ends. Paper account, not real money.
 
 [![tests](https://github.com/sidyn4444/Intraday-Trading-App/actions/workflows/tests.yml/badge.svg)](https://github.com/sidyn4444/Intraday-Trading-App/actions/workflows/tests.yml)
 
-A FastAPI dashboard for browsing the screens and assigning stocks to strategies, plus Python scripts on cron that place the orders through the Alpaca paper trading API.
+A FastAPI dashboard for browsing the screens and assigning stocks to strategies, plus automated Python scripts on cron that place the orders through the Alpaca paper trading API.
 
 Paper trading only (`paper-api.alpaca.markets`), so no real money. The deployed build was read-only — `READ_ONLY=true` turns off the strategy-assignment POST — and read from a small bundled SQLite file with about 50 tickers. The bot runs locally with the full database.
 
