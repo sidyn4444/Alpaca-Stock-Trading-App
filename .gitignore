@@ -15,6 +15,7 @@ __pycache__/
 
 # Database
 *.db
+*.db-journal
 *.sqlite
 *.sqlite3
 # Allow the committed portfolio-demo SQLite (small, public-safe) through.
@@ -40,6 +41,12 @@ logs_backup_*.txt
 
 # Personal engineering notes (not for the public repo)
 notes/
+
+# Personal documents — these do not belong in the repo
+*.pdf
+
+# Local tooling config
+.claude/
 
 # Pytest / coverage artifacts (when tests get added)
 .pytest_cache/
