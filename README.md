@@ -1,12 +1,32 @@
 # Intraday Trading App
 
+**Automated intraday stock trading, fully unattended** — screens every tradable US equity
+for setups, runs four strategies on a five-minute schedule while the market is open, and
+closes every position before the day ends. Trades a paper account, not real money.
+
 [![tests](https://github.com/sidyn4444/Intraday-Trading-App/actions/workflows/tests.yml/badge.svg)](https://github.com/sidyn4444/Intraday-Trading-App/actions/workflows/tests.yml)
 
-**Live demo**: [intraday-trading-app.up.railway.app](https://intraday-trading-app.up.railway.app)
+A FastAPI dashboard that screens roughly 10K tradable symbols across 8 technical filters, plus a cron-driven Python bot that runs four intraday strategies and submits bracket orders through the Alpaca paper trading API.
 
-FastAPI dashboard and a cron-driven Python trading bot against the Alpaca paper trading API. Screens ~10K tradable symbols across 8 technical filters, runs four intraday strategies, and flattens all positions 30 minutes before market close.
+Paper trading only (`paper-api.alpaca.markets`). No real capital is being used. The deployed build was read-only (`READ_ONLY=true` env flag disables the strategy-assignment POST) and read from a bundled snapshot SQLite seeded with about 50 tickers. The trading bot runs locally with the full database.
 
-Paper trading only (`paper-api.alpaca.markets`). No real capital is at risk. The deployed demo is read-only (`READ_ONLY=true` env flag disables the strategy-assignment POST) and reads from a bundled snapshot SQLite seeded with ~50 well-known tickers — the live trading bot still runs locally against the full database.
+## The problem
+
+There are thousands of stocks on US exchanges. On any given day only a few are doing
+something worth trading — sitting at a new high, oversold, breaking out of the range they
+opened in. Checking for that by hand means opening a lot of charts.
+
+Timing makes it harder. An opening-range strategy only works in the first few minutes after
+the market opens, so a setup is usually gone by the time you find it manually.
+
+There are also two things you have to get right on every trade: set the exit when you enter,
+and close the position before the day ends. Missing either one leaves you holding a position
+overnight.
+
+This project handles all of it on a schedule. It refreshes price data for every tradable symbol
+each evening, checks the stocks assigned to a strategy every five minutes while the market is
+open, submits each entry with its take-profit and stop-loss already attached, and closes
+everything 30 minutes before the close.
 
 ## Components
 
@@ -54,7 +74,9 @@ Paper trading only (`paper-api.alpaca.markets`). No real capital is at risk. The
 
 ## Setup
 
-Python 3.10+, an Alpaca paper trading account, and a Gmail account with an [app password](https://support.google.com/accounts/answer/185833). The four strategy scripts use stdlib `smtplib` to email a notification on each fill — no SMTP creds means the scripts will fail at the email step.
+Use Python 3.10 for the full local install — `tulipy` is a C extension that does not build
+on 3.11+. The dashboard, the test suite, and the deployed image all run on Python 3.12. You
+also need an Alpaca paper trading account and, optionally, a Gmail [app password](https://support.google.com/accounts/answer/185833) for fill notifications. The strategy scripts use stdlib `smtplib` — if SMTP credentials are missing, the scripts skip the email notifications.
 
 ```bash
 git clone https://github.com/sidyn4444/Intraday-Trading-App.git
@@ -64,12 +86,11 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-cp config.example.py config.py
-# Set in config.py:
-#   API_KEY, SECRET_KEY              from the Alpaca paper account
-#   DB_FILE                          absolute path to app.db
-#   EMAIL_ADDRESS, EMAIL_PASSWORD    Gmail address + app password
-#   API_URL, EMAIL_HOST, EMAIL_PORT  defaults already correct
+cp .env.example .env
+# Edit .env and input:
+#   ALPACA_API_KEY, ALPACA_SECRET_KEY    from the Alpaca paper dashboard
+#   DB_FILE                              absolute path to app.db
+#   EMAIL_ADDRESS, EMAIL_PASSWORD        Gmail + app password (optional)
 
 python create_db.py
 python populate_stocks.py
@@ -77,6 +98,29 @@ python populate_prices.py
 
 uvicorn main:app --reload
 ```
+
+Config is loaded from environment variables via [`python-dotenv`](https://github.com/theskumar/python-dotenv) — the `.env` file is gitignored so that real credentials don't reach GitHub. In production the cloud platform's secret store gives the same variables without a file (see [Deployment](#deployment)).
+
+## Deployment
+
+The dashboard was deployed on Railway as a Docker container. The setup:
+
+- **Hosting**: [Railway](https://railway.com) — auto-deployed from the `main` branch
+- **Container**: `Dockerfile` in this repo builds a `python:3.12-slim` image, installs `requirements-prod.txt` (no `tulipy` since only the strategy scripts use it, and those run locally)
+- **Database**: bundled `app-demo.db` seeded with around 50 well-known tickers and 100 days of synthetic OHLC. The real `app.db` (10K stocks, 100MB+) is gitignored and never deployed
+- **Read-only mode**: `READ_ONLY=true` env flag disables `POST /apply_strategy` so visitors can't change anything
+- **Secrets**: Railway's secret store injected `ALPACA_*`, `DB_FILE`, and `READ_ONLY` into the container's environment before `uvicorn` started
+
+The deployed dashboard was for portfolio demonstration. The trading bot runs locally on cron because it and the dashboard share the same SQLite file. A v2 upgrade would migrate to PostgreSQL on Railway with scheduled jobs.
+
+## Continuous integration
+
+[`tests.yml`](.github/workflows/tests.yml) runs on every push to `main`:
+
+- **`pytest`** — full 41-test suite under Python 3.12
+- **`docker-build`** — verifies that the `Dockerfile` still builds
+
+Both need to pass for the badge at the top of this README to stay green.
 
 ## Scheduling
 
@@ -96,15 +140,17 @@ Cron's PATH does not include the venv, so every entry must reference `venv/bin/p
 
 ## Risk controls
 
-- **Position sizing**: `helpers.calculate_quantity(price)` caps each entry at ~$10K regardless of share price. A hardcoded `qty=100` on a $3K share would consume $300K of buying power; this prevents that.
-- **Bracket orders**: every entry submits with `take_profit` and `stop_loss` legs in the same `api.submit_order()` call. Alpaca handles OCO server-side.
+- **Position sizing**: `helpers.calculate_quantity(price)` caps each entry at ~$10K regardless of share price. A hardcoded `qty=100` on a $3K share would tie up $300K of buying power.
+- **Bracket orders**: every entry submits with `take_profit` and `stop_loss` legs in the same `api.submit_order()` call. Alpaca cancels the other leg as soon as one of them fills.
 - **End-of-day flatten**: `daily_close.py` cancels open orders and closes all positions at 15:30 ET. Nothing is held overnight.
-
 
 ## Stack
 
-FastAPI · Jinja2 · SQLite · alpaca-trade-api · tulipy · pandas
-
+**Backend**: Python 3.12 · FastAPI · uvicorn · SQLite · alpaca-trade-api · pandas · NumPy ·
+smtplib for trade alerts · tulipy for indicator math (local only, needs Python 3.10)
+**Frontend**: HTML5 · CSS3 · Jinja2 · Semantic UI
+**Deployment**: Docker · Railway · cron · python-dotenv
+**Quality**: pytest · GitHub Actions CI
 
 ## Disclaimer
 
