@@ -1,38 +1,34 @@
 # Intraday Trading App
 
-**Automated intraday stock trading, fully unattended** — screens every tradable US equity
-for setups, runs four strategies on a five-minute schedule while the market is open, and
-closes every position before the day ends. Trades a paper account, not real money.
+**Automated intraday stock trading** — screens about 10K US stocks against 8 filters, runs
+four strategies on a five-minute schedule while the market is open, and closes every position
+before the day ends. Paper account, not real money.
 
 [![tests](https://github.com/sidyn4444/Intraday-Trading-App/actions/workflows/tests.yml/badge.svg)](https://github.com/sidyn4444/Intraday-Trading-App/actions/workflows/tests.yml)
 
-A FastAPI dashboard that screens roughly 10K tradable symbols across 8 technical filters, plus a cron-driven Python bot that runs four intraday strategies and submits bracket orders through the Alpaca paper trading API.
+A FastAPI dashboard for browsing the screens and assigning stocks to strategies, plus Python scripts on cron that place the orders through the Alpaca paper trading API.
 
-Paper trading only (`paper-api.alpaca.markets`). No real capital is being used. The deployed build was read-only (`READ_ONLY=true` env flag disables the strategy-assignment POST) and read from a bundled snapshot SQLite seeded with about 50 tickers. The trading bot runs locally with the full database.
+Paper trading only (`paper-api.alpaca.markets`), so no real money. The deployed build was read-only — `READ_ONLY=true` turns off the strategy-assignment POST — and read from a small bundled SQLite file with about 50 tickers. The bot runs locally with the full database.
 
 ## The problem
 
-There are thousands of stocks on US exchanges. On any given day only a few are doing
-something worth trading — sitting at a new high, oversold, breaking out of the range they
-opened in. Checking for that by hand means opening a lot of charts.
+There are thousands of stocks on US exchanges, and on any given day only a few are doing
+something worth trading — a new high, oversold, breaking out of the range they opened in.
+Finding those by hand means opening a lot of charts.
 
-Timing makes it harder. An opening-range strategy only works in the first few minutes after
-the market opens, so a setup is usually gone by the time you find it manually.
+Timing makes it harder. An opening-range setup only lasts a few minutes after the open, so
+it's usually gone by the time you find it manually. And on every trade you have to set the
+exit when you enter and close the position before the day ends, or you hold it overnight.
 
-There are also two things you have to get right on every trade: set the exit when you enter,
-and close the position before the day ends. Missing either one leaves you holding a position
-overnight.
-
-This project handles all of it on a schedule. It refreshes price data for every tradable symbol
-each evening, checks the stocks assigned to a strategy every five minutes while the market is
-open, submits each entry with its take-profit and stop-loss already attached, and closes
-everything 30 minutes before the close.
+This project does that on a schedule: refresh prices each evening, check the assigned stocks
+every five minutes while the market is open, submit each entry with its take-profit and
+stop-loss attached, and close everything 30 minutes before the close.
 
 ## Components
 
 | File | Responsibility |
 |---|---|
-| `main.py` | FastAPI app. Routes: stock browser with 8 filter modes, per-stock detail with daily bars, strategy assignment (POST), per-strategy view, live order list from Alpaca. |
+| `main.py` | FastAPI app. Stock browser with 8 filters, per-stock detail, strategy assignment, per-strategy view, and an order list pulled from Alpaca. |
 | `create_db.py` | SQLite schema. Tables: `stock`, `stock_price`, `strategy`, `stock_strategy`. |
 | `populate_stocks.py` | Seeds `stock` from Alpaca's tradable assets endpoint. |
 | `populate_prices.py` | Seeds `stock_price` with daily bars and tulipy-computed RSI-14, SMA-20, SMA-50. |
@@ -106,12 +102,12 @@ Config is loaded from environment variables via [`python-dotenv`](https://github
 The dashboard was deployed on Railway as a Docker container. The setup:
 
 - **Hosting**: [Railway](https://railway.com) — auto-deployed from the `main` branch
-- **Container**: `Dockerfile` in this repo builds a `python:3.12-slim` image, installs `requirements-prod.txt` (no `tulipy` since only the strategy scripts use it, and those run locally)
-- **Database**: bundled `app-demo.db` seeded with around 50 well-known tickers and 100 days of synthetic OHLC. The real `app.db` (10K stocks, 100MB+) is gitignored and never deployed
+- **Container**: `Dockerfile` builds a `python:3.12-slim` image from `requirements-prod.txt`, which leaves out `tulipy` — only the local strategy scripts need it
+- **Database**: bundled `app-demo.db` with about 50 tickers and 100 days of fake prices. The real `app.db` (10K stocks, 100MB+) is gitignored and never deployed
 - **Read-only mode**: `READ_ONLY=true` env flag disables `POST /apply_strategy` so visitors can't change anything
-- **Secrets**: Railway's secret store injected `ALPACA_*`, `DB_FILE`, and `READ_ONLY` into the container's environment before `uvicorn` started
+- **Secrets**: Railway's secret store set `ALPACA_*`, `DB_FILE`, and `READ_ONLY` as environment variables in the container
 
-The deployed dashboard was for portfolio demonstration. The trading bot runs locally on cron because it and the dashboard share the same SQLite file. A v2 upgrade would migrate to PostgreSQL on Railway with scheduled jobs.
+The deployed dashboard was just to show the project. The bot runs locally on cron because it and the dashboard share the same SQLite file. A v2 would move to PostgreSQL on Railway with scheduled jobs.
 
 ## Continuous integration
 
