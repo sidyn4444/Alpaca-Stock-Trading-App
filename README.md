@@ -30,12 +30,12 @@ stop-loss attached, and close everything 30 minutes before the close.
 |---|---|
 | `main.py` | FastAPI app. Stock browser with 8 filters, per-stock detail, strategy assignment, per-strategy view, and an order list pulled from Alpaca. |
 | `create_db.py` | SQLite schema. Tables: `stock`, `stock_price`, `strategy`, `stock_strategy`. |
-| `populate_stocks.py` | Seeds `stock` from Alpaca's tradable assets endpoint. |
-| `populate_prices.py` | Seeds `stock_price` with daily bars and tulipy-computed RSI-14, SMA-20, SMA-50. |
-| `opening_range_breakout.py` | Long on break above the 15-min opening range. Bracket order with 1× range take-profit and 1× range stop-loss. |
-| `opening_range_breakdown.py` | Short on break below the 15-min opening range. Same bracket structure. |
-| `bollinger_bands.py` | Mean reversion long: enters on cross back above the lower 20-period band. |
-| `bollinger_bands_short.py` | Mean reversion short: enters on cross back below the upper 20-period band. |
+| `populate_stocks.py` | Populates `stock` from Alpaca's list of tradable assets. |
+| `populate_prices.py` | Populates `stock_price` with daily prices, plus tulipy-computed RSI-14, SMA-20, and SMA-50. |
+| `opening_range_breakout.py` | Buys when a stock breaks above the price range it traded in during its first 15 minutes. Exits the same distance above the entry for a gain, or the same distance below it to cap the loss. |
+| `opening_range_breakdown.py` | The reverse: bets on the price falling when it drops below that first-15-minute range. Same exits. |
+| `bollinger_bands.py` | Buys a stock that fell unusually far below its recent average price and has started climbing back toward it. |
+| `bollinger_bands_short.py` | Bets on a fall after a stock climbs unusually far above its recent average price and starts dropping back. |
 | `daily_close.py` | Calls `api.cancel_all_orders()` then `api.close_all_positions()`. Scheduled at 15:30 ET. |
 | `helpers.py` | `calculate_quantity(price)` returns `math.floor(10000 / price)`. Used by all four strategies. |
 
